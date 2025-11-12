@@ -1,0 +1,6 @@
+pandas
+matplotlib
+networkx
+datasets
+tqdm
+pydantic
