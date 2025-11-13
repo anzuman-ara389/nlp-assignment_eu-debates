@@ -31,3 +31,5 @@ python 05_export_triples.py
 python 06_quality_check.py
 # optional
 python 07_community_detection.py
+## 🎥 Project Presentation
+https://drive.google.com/file/d/17I_gegXGOHInjhHNmu8xYRNG1DEgOnfH/view?usp=sharing
