@@ -1,5 +1,10 @@
 # EU Debates: From Text to Network with LLMs (Simulated)
 
+**Submitted by:** Anzuman Ara  
+**Student ID:** 20241266  
+**Module:** Natural Language Processing and Network Analysis  
+**Programme:** MSc Business Data Science
+
 ## Overview
 I convert EU Parliament debates into structured data (LLM-style), explore descriptives, and build a Speaker–Keyword knowledge graph for network analysis.
 
