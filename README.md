@@ -4,6 +4,11 @@ Student ID: 20241266
 Module: Natural Language Processing and Network Analysis
 Programme: MSc Business Data Science
 
+**Submitted by:** Anzuman Ara  
+**Student ID:** 20241266  
+**Module:** Natural Language Processing and Network Analysis  
+**Programme:** MSc Business Data Science
+
 ## Overview
 I convert EU Parliament debates into structured data (LLM-style), explore descriptives, and build a Speaker–Keyword knowledge graph for network analysis.
 
@@ -35,3 +40,5 @@ python 05_export_triples.py
 python 06_quality_check.py
 # optional
 python 07_community_detection.py
+## 🎥 Project Presentation
+https://drive.google.com/file/d/17I_gegXGOHInjhHNmu8xYRNG1DEgOnfH/view?usp=sharing
