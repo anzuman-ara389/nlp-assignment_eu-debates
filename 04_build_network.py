@@ -1,109 +1,102 @@
+# 04_build_network.py
+
 import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
-from pathlib import Path
+from matplotlib.patches import Patch
 
-# ---------------------------------------------------
-# STEP 1 — Load Data
-# ---------------------------------------------------
-print("📥 Loading extracted CSV...")
+print("✅ Loading structured data...")
 df = pd.read_csv("outputs/extracted.csv")
-print(f"Loaded {len(df)} rows")
+print("✅ Loaded", len(df), "rows")
 
-df["keyword_norm"] = (
-    df["keyword"]
-    .astype(str)
-    .str.lower()
-    .str.replace(r"[^a-z0-9\s\-]", "", regex=True)
-    .str.strip()
-)
+# ------------------------------------------------------
+# STEP 1 — Build Bipartite Graph (Speaker ↔ Keyword)
+# ------------------------------------------------------
 
-# ---------------------------------------------------
-# STEP 2 — Build Graph
-# ---------------------------------------------------
 G = nx.Graph()
 
-for _, row in df.iterrows():
-    sp = row.get("speaker")
-    kw = row.get("keyword_norm")
+for _, r in df.iterrows():
+    speaker_node = f"speaker::{r['speaker']}"
+    keyword_node = f"keyword::{r['keyword']}"
 
-    if not isinstance(sp, str) or not isinstance(kw, str):
-        continue
+    G.add_node(speaker_node, type="speaker")
+    G.add_node(keyword_node, type="keyword")
 
-    sp_node = f"speaker::{sp}"
-    kw_node = f"keyword::{kw}"
+    G.add_edge(speaker_node, keyword_node)
 
-    G.add_node(sp_node, type="speaker")
-    G.add_node(kw_node, type="keyword")
+print(f"🌐 Graph created with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
 
-    # Edge combine (increase weight)
-    if G.has_edge(sp_node, kw_node):
-        G[sp_node][kw_node]["weight"] += 1
-    else:
-        G.add_edge(sp_node, kw_node, weight=1)
+# ------------------------------------------------------
+# STEP 2 — Get top connected nodes
+# ------------------------------------------------------
 
-print(f"Graph created ✔ Nodes: {len(G.nodes())}, Edges: {len(G.edges())}")
+degree_sorted = sorted(G.degree(), key=lambda x: x[1], reverse=True)
+top_nodes = degree_sorted[:15]   # Top 15 important nodes
 
+print("\n🏆 Top 15 most connected nodes:")
+for n, d in top_nodes:
+    print(f"{n}: {d}")
 
-# ---------------------------------------------------
-# STEP 3 — Select subgraph (TOP 10 influential nodes)
-# ---------------------------------------------------
-degree_dict = dict(G.degree())
-top_nodes = sorted(degree_dict.items(), key=lambda x: x[1], reverse=True)[:10]
-top_node_names = [n for n, d in top_nodes]
+# Create subgraph containing only top nodes + neighbors
+important_nodes = set([n for n, _ in top_nodes])
 
-# include neighbors of top nodes
-sub_nodes = set(top_node_names)
-for n in top_node_names:
-    sub_nodes.update(G.neighbors(n))
+for n, _ in top_nodes:
+    important_nodes.update(G.neighbors(n))
 
-H = G.subgraph(sub_nodes).copy()
-print(f"Subgraph size ✔ Nodes: {len(H.nodes())}, Edges: {len(H.edges())}")
+H = G.subgraph(important_nodes).copy()
 
+print(f"\n📌 Subgraph created → {H.number_of_nodes()} nodes, {H.number_of_edges()} edges")
 
-# ---------------------------------------------------
-# STEP 4 — Visualization with colors + labels for top 10 only
-# ---------------------------------------------------
+# ------------------------------------------------------
+# STEP 3 — Visualization
+# ------------------------------------------------------
+
+print("\n🎨 Drawing network graph...")
+
+plt.figure(figsize=(14, 12))
 pos = nx.spring_layout(H, seed=42)
 
-node_colors = []
-labels = {}
+node_colors = ["#1f77b4" if H.nodes[n]["type"] == "speaker" else "#ff7f0e" for n in H.nodes()]
+node_sizes = [80 if H.nodes[n]["type"] == "speaker" else 140 for n in H.nodes()]
 
-for n in H.nodes():
-    node_type = H.nodes[n].get("type")
-    if node_type == "speaker":
-        node_colors.append("#1f77b4")  # blue
-    else:
-        node_colors.append("#ff7f0e")  # orange
-
-    # label only top 10 nodes for readability
-    labels[n] = n.split("::")[1] if n in top_node_names else ""
-
-
-plt.figure(figsize=(14, 14))
-
-nx.draw_networkx_nodes(
-    H, pos,
-    node_size=380,
+nx.draw(
+    H,
+    pos,
+    with_labels=False,
     node_color=node_colors,
+    node_size=node_sizes,
+    edge_color="lightgray",
+    width=0.8,
     alpha=0.9
 )
 
-nx.draw_networkx_edges(H, pos, width=0.8, alpha=0.5)
+# Label only top nodes
+for n, _ in top_nodes:
+    if n in H.nodes():
+        x, y = pos[n]
+        plt.text(
+            x, y,
+            n.replace("speaker::", "").replace("keyword::", ""),
+            fontsize=10, fontweight="bold"
+        )
 
-nx.draw_networkx_labels(
-    H, pos,
-    labels,
-    font_size=8,
-    font_color="black"
-)
+plt.title("Bipartite Network Mapping Speaker–Topic Relations in EU Debates", fontsize=16)
 
-plt.title("Speaker–Keyword Network (Top Influential Nodes)", fontsize=14)
-plt.axis("off")
+legend_elements = [
+    Patch(facecolor="#1f77b4", label="Speakers"),
+    Patch(facecolor="#ff7f0e", label="Keywords")
+]
+plt.legend(handles=legend_elements, loc="upper left", fontsize=12)
 
-Path("outputs").mkdir(exist_ok=True)
-plt.savefig("outputs/network_clean.png", dpi=300, bbox_inches="tight")
-print("📡 Clean network saved → outputs/network_clean.png")
+plt.tight_layout()
+plt.savefig("outputs/network_clean.png", dpi=300)
+plt.show()
+
+print("✅ Saved → outputs/network_clean.png")
+
+
+
+
 
 
 
