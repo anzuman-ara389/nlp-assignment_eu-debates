@@ -1,4 +1,4 @@
-# 06_quality_check.py
+# 07_quality_check.py
 import pandas as pd
 
 ex = pd.read_csv("outputs/extracted.csv")

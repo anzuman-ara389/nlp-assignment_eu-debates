@@ -1,4 +1,4 @@
-# 07_community_detection.py
+# 08_community_detection.py
 import pandas as pd
 import networkx as nx
 from networkx.algorithms.community import greedy_modularity_communities
