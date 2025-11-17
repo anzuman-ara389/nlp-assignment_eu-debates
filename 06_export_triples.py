@@ -1,4 +1,4 @@
-# 05_export_triples.py
+# 06_export_triples.py
 import pandas as pd
 import networkx as nx
 from pathlib import Path
