@@ -1,44 +1,57 @@
+# ---------------------------------------------------------
 # 03_descriptive_analysis.py
+# Creates keyword frequency charts using YAKE
+# ---------------------------------------------------------
+
 import pandas as pd
+import yake
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-print("✅ Loading structured data...")
-ex = pd.read_csv("outputs/extracted.csv")
-print("✅ Loaded", len(ex), "rows")
+print("📌 Loading extracted structured data...")
+df = pd.read_csv("outputs/extracted.csv")
 
-# Step 1: Clean up the keyword text
-ex["keyword_norm"] = (
-    ex["keyword"]
-    .str.lower()
-    .str.replace(r"[^a-z0-9\s\-]", "", regex=True)
-    .str.strip()
+# ---------------------------------------------------------
+# Step 1 — Load speech text
+# ---------------------------------------------------------
+texts = df["speech"].dropna().tolist()   # 🔥 FIXED: use "speech" not "text"
+
+# Combine all speeches into one big text
+full_text = " ".join(texts)
+
+# ---------------------------------------------------------
+# Step 2 — YAKE keyword extraction
+# ---------------------------------------------------------
+print("📌 Extracting keywords using YAKE...")
+
+kw_extractor = yake.KeywordExtractor(
+    lan="en",
+    n=3,                # up to 3-word phrases
+    dedupLim=0.1,       # reduce duplicates
+    top=100             # extract top 100
 )
 
-# Step 2: Basic counts
-top_keywords = ex["keyword_norm"].value_counts().head(20)
-print("\n🔝 Top 20 keywords:\n", top_keywords)
+keywords = kw_extractor.extract_keywords(full_text)
 
-# Step 3: Plot the top keywords
+# Convert to DataFrame
+kw_df = pd.DataFrame(keywords, columns=["keyword", "score"])
+
+# Lower score = more important → sort ascending
+kw_df = kw_df.sort_values("score").head(20)
+
+# ---------------------------------------------------------
+# Step 3 — Plot top keywords
+# ---------------------------------------------------------
+plt.figure(figsize=(10, 8))
+plt.barh(kw_df["keyword"], kw_df["score"])
+plt.xlabel("YAKE Score (lower = more important)")
+plt.title("Top 20 Cleaned Keywords in EU Debates (YAKE)")
+plt.gca().invert_yaxis()
+
 Path("outputs").mkdir(exist_ok=True)
-plt.figure(figsize=(7,6))
-top_keywords[::-1].plot(kind="barh")
-plt.title("Top 20 Keywords in EU Debates")
-plt.xlabel("Frequency")
-plt.ylabel("Keyword")
 plt.tight_layout()
-plt.savefig("outputs/top_keywords.png")
-print("✅ Saved bar chart → outputs/top_keywords.png")
+plt.savefig("outputs/top_keywords_clean.png")
+plt.close()
 
-# Step 4: Quick summary by party (if present)
-if "party" in ex.columns:
-    party_counts = ex["party"].value_counts().head(10)
-    print("\n🏛️ Top 10 parties:\n", party_counts)
-    plt.figure(figsize=(7,6))
-    party_counts[::-1].plot(kind="barh", color="teal")
-    plt.title("Top 10 Speaker Parties")
-    plt.tight_layout()
-    plt.savefig("outputs/top_parties.png")
-    print("✅ Saved chart → outputs/top_parties.png")
+print("✅ Keyword visualization saved to: outputs/top_keywords_clean.png")
 
-print("\n🎉 Descriptive analysis complete!")
